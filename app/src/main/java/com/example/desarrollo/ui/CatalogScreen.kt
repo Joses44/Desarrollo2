@@ -16,10 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.example.desarrollo.model.Product
 import com.example.desarrollo.model.SampleData
 
-/**
- * Esta es la vista principal del catálogo.
- * Muestra una lista de categorías, y dentro de cada una, los productos correspondientes.
- */
+
 @Composable
 fun CatalogView(modifier: Modifier = Modifier) {
     // LazyColumn es ideal para listas, ya que solo renderiza los elementos visibles.
