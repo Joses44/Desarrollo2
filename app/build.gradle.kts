@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.teacherstore"
+    namespace = "com.example.desarrollo"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.teacherstore"
+        applicationId = "com.example.desarrollo"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
