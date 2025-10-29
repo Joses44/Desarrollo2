@@ -4,84 +4,118 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons // <-- 1. Importa los iconos
+import androidx.compose.material.icons.filled.Star // <-- 2. Importa el icono de estrella
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color // <-- 3. Importa Color para la estrella
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desarrollo.model.Product
 import com.example.desarrollo.model.SampleData
+import com.example.desarrollo.viewmodel.CartViewModel
 
-
+/**
+ * Vista principal del catálogo.
+ */
 @Composable
-fun CatalogView(modifier: Modifier = Modifier) {
-    // LazyColumn es ideal para listas, ya que solo renderiza los elementos visibles.
+fun CatalogView(
+    modifier: Modifier = Modifier,
+    cartViewModel: CartViewModel
+) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp) // Añade espacio a los lados de toda la lista
+            .padding(horizontal = 16.dp)
     ) {
-        // Iteramos sobre cada 'category' en la lista de SampleData.categories
         SampleData.categories.forEach { category ->
-            // 1. Mostramos el nombre de la categoría como un encabezado
             item {
                 Text(
                     text = category.name,
-                    style = MaterialTheme.typography.headlineSmall, // Estilo de título
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 24.dp, bottom = 8.dp) // Espacio arriba y abajo del título
+                    modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
                 )
             }
-
-            // 2. Mostramos los productos de esta categoría
             items(category.products) { product ->
-                // Usamos el Composable ProductCard para mostrar cada producto
-                ProductCard(product = product)
+                ProductCard(
+                    product = product,
+                    onAddToCart = { cartViewModel.agregarAlCarrito(product) }
+                )
             }
         }
     }
 }
 
 /**
- * Este Composable define cómo se ve cada tarjeta de producto individual.
- * Recibe un objeto 'Product' completo para obtener todos sus datos.
+ * Tarjeta de producto individual.
  */
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(
+    product: Product,
+    onAddToCart: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp) // Espacio entre las tarjetas
+            .padding(vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically // Centra los elementos verticalmente
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = product.imageRes),
                 contentDescription = "Imagen de ${product.name}",
                 modifier = Modifier
-                    .size(80.dp) // Hacemos la imagen un poco más grande
-                    .padding(end = 16.dp) // Espacio entre la imagen y el texto
+                    .size(80.dp)
+                    .padding(end = 16.dp)
             )
             Column(
-                modifier = Modifier.weight(1f) // La columna de texto ocupa el espacio restante
+                modifier = Modifier.weight(1f)
             ) {
+                // Nombre
                 Text(
                     text = product.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+                // Precio
                 Text(
-                    text = "$${product.price} / ${product.unit}", // Muestra precio y unidad
+                    text = "$${product.price} / ${product.unit}",
                     style = MaterialTheme.typography.bodyLarge
                 )
-                // En el futuro, aquí podrías añadir un botón de "Añadir al carrito"
+                Spacer(modifier = Modifier.height(4.dp)) // Espacio antes del rating
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Rating",
+                        tint = Color(0xFFFFC107), // Color amarillo para la estrella
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = product.rating.toString(),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.height(8.dp)) // Espacio antes del botón
+
+                // Botón pa añadir unidad, hola martín 👽
+                Button(
+                    onClick = onAddToCart,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Añadir unidad")
+                }
             }
         }
     }

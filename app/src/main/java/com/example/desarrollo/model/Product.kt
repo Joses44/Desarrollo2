@@ -8,5 +8,6 @@ data class Product(
     val stock: String,
     val imageRes: Int,
     val description: String,
-    val rating: Double
+    val rating: Double,
+    var cantidad: Int = 0
 )
