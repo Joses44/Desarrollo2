@@ -4,31 +4,36 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.AccountCircle // 🌟 AGREGAR: Icono de perfil
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.viewmodel.compose.viewModel // <-- 1. IMPORTANTE: Añade esta importación
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-import com.example.desarrollo.viewmodel.CartViewModel // <-- 2. IMPORTANTE: Añade esta importación
+import com.example.desarrollo.viewmodel.CartViewModel
+import com.example.desarrollo.viewmodel.ProfileViewModel // 🌟 AGREGAR: ViewModel de Perfil
 
 // La definición de los items de la barra de navegación, hola martín 👽🌽
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Catalog : BottomNavItem(AppDestinations.CATALOG_ROUTE, Icons.Default.Home, "Catálogo")
     object Cart : BottomNavItem(AppDestinations.CART_ROUTE, Icons.Default.ShoppingCart, "Carrito")
+    object Profile : BottomNavItem(AppDestinations.PROFILE_ROUTE, Icons.Default.AccountCircle, "Perfil") // 🌟 AGREGAR: Nuevo ítem de perfil
 }
 
 @Composable
 fun MainFlow() {
     val navController = rememberNavController()
-    val bottomNavItems = listOf(BottomNavItem.Catalog, BottomNavItem.Cart)
+    // 🌟 MODIFICADO: Incluir el nuevo ítem de perfil en la lista
+    val bottomNavItems = listOf(BottomNavItem.Catalog, BottomNavItem.Cart, BottomNavItem.Profile)
 
     // --- ¡AQUÍ ESTÁ LA LÓGICA CLAVE! ---
-    // 3. Creamos la ÚNICA instancia del CartViewModel aquí, en el punto más alto.
+    // 3. ViewModels con alcance de MainFlow
     val cartViewModel: CartViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel() // 🌟 AGREGAR: Instancia de ProfileViewModel
 
     Scaffold(
         bottomBar = {
@@ -62,12 +67,20 @@ fun MainFlow() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppDestinations.CATALOG_ROUTE) {
-                // 4. Pasamos la instancia ÚNICA a CatalogView.
+                // 4. Sin cambios en la firma de CatalogView
                 CatalogView(cartViewModel = cartViewModel)
             }
             composable(AppDestinations.CART_ROUTE) {
-                // 5. Pasamos la MISMA instancia ÚNICA a CartScreen.
+                // 5. Sin cambios en la firma de CartScreen
                 CartScreen(cartViewModel = cartViewModel)
+            }
+
+            // 🌟 AGREGAR: Nuevo destino para la pantalla de perfil
+            composable(AppDestinations.PROFILE_ROUTE) {
+                ProfileScreen(
+                    viewModel = profileViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }
