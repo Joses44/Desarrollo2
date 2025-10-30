@@ -18,6 +18,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desarrollo.model.Product
 import com.example.desarrollo.model.SampleData
 import com.example.desarrollo.viewmodel.CartViewModel
+import java.text.NumberFormat
+import java.util.Locale
+
 
 /**
  * Vista principal del catálogo.
@@ -87,7 +90,7 @@ fun ProductCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 // Precio
                 Text(
-                    text = "$${product.price} / ${product.unit}",
+                    text = "$${formatPrice(product.price)} / ${product.unit}",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(4.dp)) // Espacio antes del rating
@@ -119,4 +122,7 @@ fun ProductCard(
             }
         }
     }
+}
+private fun formatPrice(price: Int): String {
+    return NumberFormat.getNumberInstance(Locale.GERMANY).format(price)
 }

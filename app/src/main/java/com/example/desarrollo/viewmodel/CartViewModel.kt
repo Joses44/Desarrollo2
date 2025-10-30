@@ -14,12 +14,12 @@ import kotlinx.coroutines.flow.update
  */
 data class CartUiState(
     val productosEnCarrito: List<Product> = listOf(),
-    val total: Double = 0.0
+    val total: Int = 0
 )
 
 class CartViewModel : ViewModel() {
 
-    // 1. _uiState es PRIVADO y MUTABLE. Es la fuente de la verdad.
+
     private val _uiState = MutableStateFlow(CartUiState())
 
     // 2. uiState es PÚBLICO e INMUTABLE. La UI observará este flujo.
@@ -90,7 +90,11 @@ class CartViewModel : ViewModel() {
      */
     private fun recalcularTotal() {
         _uiState.update { currentState ->
-            val nuevoTotal = currentState.productosEnCarrito.sumOf { it.price * it.cantidad.toDouble() }
+            // Simplemente realizamos la suma de enteros.
+            // El resultado de (it.price * it.cantidad) es Int, y sumOf los acumulará como Int.
+            val nuevoTotal = currentState.productosEnCarrito.sumOf { it.price * it.cantidad }
+
+            // Asignamos el resultado Int directamente al total.
             currentState.copy(total = nuevoTotal)
         }
     }
