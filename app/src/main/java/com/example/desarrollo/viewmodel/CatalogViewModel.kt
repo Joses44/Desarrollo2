@@ -1,27 +1,30 @@
 package com.example.desarrollo.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.example.desarrollo.model.Category
-import com.example.desarrollo.model.Product
-import com.example.desarrollo.model.SampleData
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.desarrollo.data.ProductRepository
+import com.example.desarrollo.model.CategoryWithProducts
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 
-class CatalogViewModel : ViewModel() {
+class CatalogViewModel(repository: ProductRepository) : ViewModel() {
 
-    // Exponemos la lista de categorías desde SampleData
-    val categories: List<Category> = SampleData.categories
+    val categoriesWithProducts: StateFlow<List<CategoryWithProducts>> = repository.categoriesWithProducts
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+}
 
-    // Lista de todos los productos planos (opcional)
-    val allProducts: List<Product> by lazy {
-        categories.flatMap { it.products }
-    }
-
-    init {
-        Log.d("CatalogViewModel", "Categories loaded: $categories")
-    }
-
-    // Función para obtener productos por categoría
-    fun getProductsByCategory(categoryName: String): List<Product> {
-        return categories.find { it.name == categoryName }?.products ?: emptyList()
+class CatalogViewModelFactory(private val repository: ProductRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CatalogViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return CatalogViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

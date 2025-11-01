@@ -1,20 +1,24 @@
 package com.example.desarrollo.ui
 
-import androidx.compose.foundation.Image // <-- 1. IMPORTACIÓN AÑADIDA
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape // <-- 2. IMPORTACIÓN AÑADIDA (para imágenes redondas)
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip // <-- 3. IMPORTACIÓN AÑADIDA
-import androidx.compose.ui.res.painterResource // <-- 4. IMPORTACIÓN AÑADIDA
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.desarrollo.model.Product
+import com.example.desarrollo.model.CartItemDetails
 import com.example.desarrollo.viewmodel.CartViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -24,18 +28,13 @@ fun CartScreen(
     modifier: Modifier = Modifier,
     cartViewModel: CartViewModel
 ) {
-    // Escuchamos el uiState del ViewModel.
     val uiState by cartViewModel.uiState.collectAsState()
-
-    // Estado para el diálogo de "Vaciar Carrito" (el que ya tenías 👽👽🌽🌽🌽🌽💩💩).
     var showClearCartDialog by rememberSaveable { mutableStateOf(false) }
-
-    // estado para el diálogo de "Resumen de Compra".
     var showPurchaseDialog by rememberSaveable { mutableStateOf(false) }
+    var itemToDelete by remember { mutableStateOf<CartItemDetails?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (uiState.productosEnCarrito.isEmpty()) {
-            // Región para cuando el carrito está vacío
+        if (uiState.items.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,7 +46,6 @@ fun CartScreen(
                 )
             }
         } else {
-            // Región para cuando el carrito tiene productos
             Column(modifier = Modifier.fillMaxSize()) {
                 Text(
                     text = "Mi Carrito",
@@ -56,13 +54,13 @@ fun CartScreen(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                // Lista de productos
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(uiState.productosEnCarrito) { producto ->
+                    items(uiState.items) { item ->
                         CartItem(
-                            producto = producto,
-                            onAdd = { cartViewModel.agregarAlCarrito(producto) },
-                            onRemove = { cartViewModel.removerUnidad(producto) }
+                            item = item,
+                            onIncrement = { cartViewModel.incrementarUnidad(item.productId) },
+                            onDecrement = { cartViewModel.decrementarUnidad(item.productId) },
+                            onRemove = { itemToDelete = item }
                         )
                     }
                 }
@@ -76,18 +74,11 @@ fun CartScreen(
         }
     }
 
-    // "Vaciar Carrito" esta es la confirmación jajaajejeijojojuju.
     if (showClearCartDialog) {
         AlertDialog(
-            onDismissRequest = {
-                showClearCartDialog = false
-            },
-            title = {
-                Text(text = "Confirmación")
-            },
-            text = {
-                Text("¿Estás seguro/a de que quieres vaciar tu carrito?")
-            },
+            onDismissRequest = { showClearCartDialog = false },
+            title = { Text(text = "Confirmación") },
+            text = { Text("¿Estás seguro/a de que quieres vaciar tu carrito?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -100,34 +91,66 @@ fun CartScreen(
                 }
             },
             dismissButton = {
-                OutlinedButton(
-                    onClick = {
-                        showClearCartDialog = false
-                    }
-                ) {
+                OutlinedButton(onClick = { showClearCartDialog = false }) {
                     Text("Cancelar")
                 }
             }
         )
     }
 
-    //Resumen de Compra.
     if (showPurchaseDialog) {
         PurchaseSummaryDialog(
-            products = uiState.productosEnCarrito,
+            items = uiState.items,
             total = uiState.total,
             onDismiss = { showPurchaseDialog = false }
         )
     }
+
+    itemToDelete?.let {
+        ConfirmarEliminacionDialog(
+            item = it,
+            onConfirm = {
+                cartViewModel.removerProducto(it.productId)
+                itemToDelete = null
+            },
+            onDismiss = { itemToDelete = null }
+        )
+    }
+}
+
+@Composable
+fun ConfirmarEliminacionDialog(
+    item: CartItemDetails,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirmar Eliminación") },
+        text = {
+            val formattedUnit = getFormattedUnit(item.quantity, item.unit)
+            Text("Eliminarás todas las unidades del producto \"${item.name} (${item.quantity} $formattedUnit)\".")
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Eliminar Unidades")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 
-/**
- * Composable para el diálogo de resumen de compra, AHORA CON IMÁGENES.
- */
 @Composable
 fun PurchaseSummaryDialog(
-    products: List<Product>,
+    items: List<CartItemDetails>,
     total: Int,
     onDismiss: () -> Unit
 ) {
@@ -135,37 +158,26 @@ fun PurchaseSummaryDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Resumen de tu Compra") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { // Espacio entre cada producto
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Comprarás:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                // Muestra cada producto en una línea separada
-                products.forEach { product ->
+                items.forEach { item ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // IMAGEN PEQUEÑA Y REDONDA
                         Image(
-                            painter = painterResource(id = product.imageRes),
-                            contentDescription = "Imagen de ${product.name}",
-                            modifier = Modifier
-                                .size(32.dp) // Tamaño más pequeño
-                                .clip(CircleShape) // Forma redonda
+                            painter = painterResource(id = item.imageRes),
+                            contentDescription = "Imagen de ${item.name}",
+                            modifier = Modifier.size(32.dp).clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        // TEXTO DEL PRODUCTO
-                        val formattedUnit = getFormattedUnit(product.cantidad, product.unit)
-                        Text(text = "${product.name} (${product.cantidad} $formattedUnit)")
+                        val formattedUnit = getFormattedUnit(item.quantity, item.unit)
+                        Text(text = "${item.name} (${item.quantity} $formattedUnit)")
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                // Muestra el total formateado
                 Text("Total: $${formatPrice(total)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    // Por ahora, solo cierra el diálogo.
-                    onDismiss()
-                }
-            ) {
+            Button(onClick = onDismiss) {
                 Text("Continuar a la Compra")
             }
         },
@@ -177,9 +189,6 @@ fun PurchaseSummaryDialog(
     )
 }
 
-/**
- * Función de ayuda para pluralizar las unidades.
- */
 private fun getFormattedUnit(quantity: Int, unit: String): String {
     return if (quantity != 1 && unit.equals("kg", ignoreCase = true).not()) {
         "${unit}s"
@@ -188,14 +197,11 @@ private fun getFormattedUnit(quantity: Int, unit: String): String {
     }
 }
 
-
-/**
- * Composable para mostrar un solo item en el carrito, AHORA CON IMAGEN.
- */
 @Composable
 fun CartItem(
-    producto: Product,
-    onAdd: () -> Unit,
+    item: CartItemDetails,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
     onRemove: () -> Unit
 ) {
     Card(
@@ -207,48 +213,50 @@ fun CartItem(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // IMAGEN DEL PRODUCTO
             Image(
-                painter = painterResource(id = producto.imageRes),
-                contentDescription = producto.name,
-                modifier = Modifier
-                    .size(64.dp) // Tamaño mediano
-                    .clip(CircleShape)
+                painter = painterResource(id = item.imageRes),
+                contentDescription = item.name,
+                modifier = Modifier.size(64.dp).clip(CircleShape)
             )
             Spacer(modifier = Modifier.width(16.dp))
 
-            // NOMBRE DEL PRODUCTO
-            Text(
-                text = producto.name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
-            )
-
-            // CONTROLES DE CANTIDAD
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(onClick = onRemove, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
-                    Text("-", style = MaterialTheme.typography.titleLarge)
-                }
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${producto.cantidad}",
+                    text = item.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
-                OutlinedButton(onClick = onAdd, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
-                    Text("+", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "$${formatPrice(item.price * item.quantity)}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                OutlinedButton(onClick = onDecrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
+                    Icon(Icons.Default.Remove, contentDescription = "Quitar unidad")
+                }
+                Text(
+                    text = "${item.quantity}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                OutlinedButton(onClick = onIncrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir unidad")
+                }
+                IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar producto")
                 }
             }
         }
     }
 }
 
-
-/**
- * Composable para el pie de página, AHORA CON DOS BOTONES.
- */
 @Composable
 fun TotalFooter(
     total: Int,
@@ -260,13 +268,11 @@ fun TotalFooter(
         shadowElevation = 8.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Fila del total
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Total:", style = MaterialTheme.typography.titleLarge)
-
                 Text(
                     text = "$${formatPrice(total)}",
                     style = MaterialTheme.typography.titleLarge,
@@ -274,7 +280,6 @@ fun TotalFooter(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            //Fila para los dos botones de acción
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -287,7 +292,7 @@ fun TotalFooter(
                 }
                 Button(
                     onClick = onPurchase,
-                    modifier = Modifier.weight(2f)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text("Comprar")
                 }
@@ -296,8 +301,6 @@ fun TotalFooter(
     }
 }
 
-
 private fun formatPrice(price: Int): String {
-    // Especificamos la ruta completa para evitar ambigüedades con otras clases Locale
-    return NumberFormat.getNumberInstance(java.util.Locale.GERMANY).format(price)
+    return NumberFormat.getNumberInstance(Locale.GERMANY).format(price)
 }

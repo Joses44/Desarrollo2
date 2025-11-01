@@ -3,19 +3,32 @@ package com.example.desarrollo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.desarrollo.ui.AuthNavigation
-import com.example.desarrollo.ui.MainFlow // <-- ¡IMPORTANTE! Importa el nuevo MainFlow
-import com.example.desarrollo.ui.theme.theme.DesarrolloTheme // Ajusta si la ruta del tema es otra
+import com.example.desarrollo.ui.MainFlow
+import com.example.desarrollo.ui.theme.theme.DesarrolloTheme
+import com.example.desarrollo.viewmodel.CatalogViewModel
+import com.example.desarrollo.viewmodel.CatalogViewModelFactory
+import com.example.desarrollo.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val catalogViewModel: CatalogViewModel by viewModels {
+        CatalogViewModelFactory((application as MyApplication).productRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -24,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(catalogViewModel)
                 }
             }
         }
@@ -38,30 +51,43 @@ object AppFlow {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(catalogViewModel: CatalogViewModel) {
     val navController = rememberNavController()
+    val mainViewModel: MainViewModel = viewModel()
+    val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
+
+    val startDestination = AppFlow.AUTH_FLOW
+
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            navController.navigate(AppFlow.MAIN_FLOW) {
+                popUpTo(AppFlow.AUTH_FLOW) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = AppFlow.AUTH_FLOW // Empezamos en el flujo de autenticación
+        startDestination = startDestination
     ) {
-        // Flujo de Autenticación
         composable(AppFlow.AUTH_FLOW) {
             AuthNavigation(
                 onAuthSuccess = {
-                    // Cuando el login es exitoso, navegamos al MainFlow
-                    navController.navigate(AppFlow.MAIN_FLOW) {
-                        // Limpiamos el historial de navegación para que el usuario no pueda
-                        // volver a la pantalla de login con el botón de "atrás".
-                        popUpTo(AppFlow.AUTH_FLOW) { inclusive = true }
-                    }
+                    mainViewModel.setLoggedIn()
                 }
             )
         }
 
-        // Flujo Principal de la App
         composable(AppFlow.MAIN_FLOW) {
-            MainFlow() // Aquí se carga toda la interfaz principal (catálogo, carrito, y la barra de nav)
+            MainFlow(
+                catalogViewModel = catalogViewModel,
+                onLogout = {
+                    mainViewModel.setLoggedOut()
+                    navController.navigate(AppFlow.AUTH_FLOW) {
+                        popUpTo(AppFlow.MAIN_FLOW) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

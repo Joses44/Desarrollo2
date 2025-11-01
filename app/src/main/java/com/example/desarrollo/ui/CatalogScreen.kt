@@ -4,47 +4,47 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons // <-- 1. Importa los iconos
-import androidx.compose.material.icons.filled.Star // <-- 2. Importa el icono de estrella
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color // <-- 3. Importa Color para la estrella
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desarrollo.model.Product
-import com.example.desarrollo.model.SampleData
+import com.example.desarrollo.viewmodel.CatalogViewModel
 import com.example.desarrollo.viewmodel.CartViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
-
-/**
- * Vista principal del catálogo.
- */
 @Composable
-fun CatalogView(
+fun CatalogScreen(
     modifier: Modifier = Modifier,
+    catalogViewModel: CatalogViewModel,
     cartViewModel: CartViewModel
 ) {
+    val categoriesWithProducts by catalogViewModel.categoriesWithProducts.collectAsState()
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        SampleData.categories.forEach { category ->
+        categoriesWithProducts.forEach { categoryWithProducts ->
             item {
                 Text(
-                    text = category.name,
+                    text = categoryWithProducts.category.name,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
                 )
             }
-            items(category.products) { product ->
+            items(categoryWithProducts.products) { product ->
                 ProductCard(
                     product = product,
                     onAddToCart = { cartViewModel.agregarAlCarrito(product) }
@@ -54,9 +54,6 @@ fun CatalogView(
     }
 }
 
-/**
- * Tarjeta de producto individual.
- */
 @Composable
 fun ProductCard(
     product: Product,
@@ -81,25 +78,23 @@ fun ProductCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Nombre
                 Text(
                     text = product.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Precio
                 Text(
                     text = "$${formatPrice(product.price)} / ${product.unit}",
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Spacer(modifier = Modifier.height(4.dp)) // Espacio antes del rating
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = "Rating",
-                        tint = Color(0xFFFFC107), // Color amarillo para la estrella
+                        tint = Color(0xFFFFC107),
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -109,10 +104,8 @@ fun ProductCard(
                     )
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp)) // Espacio antes del botón
-
-                // Botón pa añadir unidad, hola martín 👽
                 Button(
                     onClick = onAddToCart,
                     modifier = Modifier.fillMaxWidth()
@@ -123,6 +116,7 @@ fun ProductCard(
         }
     }
 }
+
 private fun formatPrice(price: Int): String {
     return NumberFormat.getNumberInstance(Locale.GERMANY).format(price)
 }

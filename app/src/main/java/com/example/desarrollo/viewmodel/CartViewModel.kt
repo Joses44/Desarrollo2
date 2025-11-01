@@ -1,101 +1,72 @@
 package com.example.desarrollo.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.desarrollo.data.CartRepository
+import com.example.desarrollo.model.CartItemDetails
 import com.example.desarrollo.model.Product
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-/**
- * Clase de estado para la UI del carrito.
- * Contiene la lista de productos y el total.
- * Es una 'data class' para que StateFlow pueda compararla eficientemente.
- */
 data class CartUiState(
-    val productosEnCarrito: List<Product> = listOf(),
+    val items: List<CartItemDetails> = listOf(),
     val total: Int = 0
 )
 
-class CartViewModel : ViewModel() {
+class CartViewModel(private val repository: CartRepository) : ViewModel() {
 
+    val uiState: StateFlow<CartUiState> = repository.cartItems
+        .map { cartItems ->
+            val total = cartItems.sumOf { it.price * it.quantity }
+            CartUiState(items = cartItems, total = total)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = CartUiState()
+        )
 
-    private val _uiState = MutableStateFlow(CartUiState())
-
-    // 2. uiState es PÚBLICO e INMUTABLE. La UI observará este flujo.
-    val uiState: StateFlow<CartUiState> = _uiState.asStateFlow()
-
-    /**
-     * Añade una unidad de un producto al carrito.
-     */
     fun agregarAlCarrito(producto: Product) {
-        // 'update' es una forma segura de modificar el estado.
-        _uiState.update { currentState ->
-            val productos = currentState.productosEnCarrito.toMutableList()
-            val productoExistente = productos.find { it.id == producto.id }
-
-            if (productoExistente != null) {
-                // Creamos una NUEVA instancia del producto con la cantidad actualizada.
-                val productoActualizado = productoExistente.copy(cantidad = productoExistente.cantidad + 1)
-                val index = productos.indexOf(productoExistente)
-                productos[index] = productoActualizado
-            } else {
-                // Creamos una NUEVA instancia con cantidad 1.
-                productos.add(producto.copy(cantidad = 1))
-            }
-            // Devolvemos un NUEVO estado con la lista actualizada
-            currentState.copy(productosEnCarrito = productos)
+        viewModelScope.launch {
+            repository.addItem(producto)
         }
-        recalcularTotal()
     }
 
-    /**
-     * Remueve una unidad de un producto del carrito.
-     */
-    fun removerUnidad(producto: Product) {
-        _uiState.update { currentState ->
-            val productos = currentState.productosEnCarrito.toMutableList()
-            val productoExistente = productos.find { it.id == producto.id }
-
-            if (productoExistente != null) {
-                if (productoExistente.cantidad > 1) {
-                    // Creamos una NUEVA instancia con la cantidad actualizada.
-                    val productoActualizado = productoExistente.copy(cantidad = productoExistente.cantidad - 1)
-                    val index = productos.indexOf(productoExistente)
-                    productos[index] = productoActualizado
-                } else {
-                    // Si la cantidad es 1, simplemente eliminamos el producto de la lista.
-                    productos.remove(productoExistente)
-                }
-            }
-            // Devolvemos un NUEVO estado con la lista actualizada
-            currentState.copy(productosEnCarrito = productos)
+    fun removerProducto(productId: Int) {
+        viewModelScope.launch {
+            repository.removeItem(productId)
         }
-        recalcularTotal()
     }
 
-    /**
-     * Elimina todos los productos del carrito.
-     */
     fun vaciarCarrito() {
-        _uiState.update {
-            //se devuelve a un estado nuevo y vacío.
-            CartUiState()
+        viewModelScope.launch {
+            repository.clearCart()
         }
     }
 
-    /**
-     * Recalcula el total y actualiza el estado.
-     * se llama cada vez que modificamos el carrito.
-     */
-    private fun recalcularTotal() {
-        _uiState.update { currentState ->
-            // Simplemente realizamos la suma de enteros.
-            // El resultado de (it.price * it.cantidad) es Int, y sumOf los acumulará como Int.
-            val nuevoTotal = currentState.productosEnCarrito.sumOf { it.price * it.cantidad }
-
-            // Asignamos el resultado Int directamente al total.
-            currentState.copy(total = nuevoTotal)
+    fun incrementarUnidad(productId: Int) {
+        viewModelScope.launch {
+            repository.incrementItem(productId)
         }
+    }
+
+    fun decrementarUnidad(productId: Int) {
+        viewModelScope.launch {
+            repository.decrementItem(productId)
+        }
+    }
+}
+
+class CartViewModelFactory(private val repository: CartRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CartViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return CartViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -1,13 +1,7 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-        mavenCentral()
+        google()
+        mavenCentral() // <-- AQUÍ ESTABA EL ERROR
         gradlePluginPortal()
     }
 }
@@ -15,7 +9,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        mavenCentral()
+        mavenCentral() // <-- Y AQUÍ TAMBIÉN
     }
 }
 
