@@ -19,9 +19,10 @@ import com.example.desarrollo.MyApplication
 import com.example.desarrollo.viewmodel.CartViewModel
 import com.example.desarrollo.viewmodel.CartViewModelFactory
 import com.example.desarrollo.viewmodel.CatalogViewModel
+import com.example.desarrollo.viewmodel.MainViewModel
 import com.example.desarrollo.viewmodel.ProfileViewModel
+import com.example.desarrollo.viewmodel.ProfileViewModelFactory // Importa la nueva Factory
 
-// La definición de los items de la barra de navegación, hola martín 👽🌽
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Catalog : BottomNavItem(AppDestinations.CATALOG_ROUTE, Icons.Default.Home, "Catálogo")
     object Cart : BottomNavItem(AppDestinations.CART_ROUTE, Icons.Default.ShoppingCart, "Carrito")
@@ -29,7 +30,7 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: 
 }
 
 @Composable
-fun MainFlow(catalogViewModel: CatalogViewModel, onLogout: () -> Unit) {
+fun MainFlow(mainViewModel: MainViewModel, catalogViewModel: CatalogViewModel, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val bottomNavItems = listOf(BottomNavItem.Catalog, BottomNavItem.Cart, BottomNavItem.Profile)
 
@@ -37,7 +38,8 @@ fun MainFlow(catalogViewModel: CatalogViewModel, onLogout: () -> Unit) {
     val cartViewModel: CartViewModel = viewModel(
         factory = CartViewModelFactory(application.cartRepository)
     )
-    val profileViewModel: ProfileViewModel = viewModel()
+    // Usa la factory para crear el ProfileViewModel
+    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory())
 
     Scaffold(
         bottomBar = {
@@ -78,7 +80,8 @@ fun MainFlow(catalogViewModel: CatalogViewModel, onLogout: () -> Unit) {
 
             composable(AppDestinations.PROFILE_ROUTE) {
                 ProfileScreen(
-                    viewModel = profileViewModel,
+                    mainViewModel = mainViewModel,
+                    profileViewModel = profileViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onLogout = onLogout
                 )

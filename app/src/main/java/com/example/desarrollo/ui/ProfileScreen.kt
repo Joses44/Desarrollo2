@@ -21,28 +21,30 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.desarrollo.R
+import com.example.desarrollo.viewmodel.MainViewModel
 import com.example.desarrollo.viewmodel.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
+    mainViewModel: MainViewModel,
+    profileViewModel: ProfileViewModel,
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val userProfile by viewModel.userProfile.collectAsState()
-    val isSaving by viewModel.isSaving
-    val saveSuccess by viewModel.saveSuccess
+    val userProfile by profileViewModel.userProfile.collectAsState()
+    val isSaving by profileViewModel.isSaving
+    val saveSuccess by profileViewModel.saveSuccess
+    
+    // Recogemos el estado del modo oscuro del MainViewModel
+    val useDarkMode by mainViewModel.isDarkMode.collectAsState()
 
-    // Lanzador para la Galería (Photo Picker)
     val pickMediaLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        // Llama a la función del ViewModel para guardar la URI
-        viewModel.onProfilePictureUriChange(uri)
+        profileViewModel.onProfilePictureUriChange(uri)
     }
 
     Scaffold(
@@ -65,19 +67,16 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // ---  LÓGICA DE LA FOTO DE PERFIL (COMPLETADA) ---
             Box(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
                     .clickable {
-                        // Al hacer clic, abre el selector de imagen (Galería)
                         pickMediaLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     }
             ) {
-                // Si la URI está llena, Coil carga la imagen; si no, usa el recurso local
                 val hasPhoto = userProfile.profilePictureUri.isNotEmpty()
 
                 if (hasPhoto) {
@@ -88,7 +87,6 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    // Muestra la imagen predeterminada
                     Image(
                         painter = painterResource(id = R.drawable.ic_default_profile_foreground),
                         contentDescription = "Foto predeterminada",
@@ -97,7 +95,6 @@ fun ProfileScreen(
                     )
                 }
 
-                // Ícono de Cámara para indicar que es clickable
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = "Cambiar foto",
@@ -108,21 +105,33 @@ fun ProfileScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            // ---  FIN DE LÓGICA DE LA FOTO DE PERFIL ---
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campos de Edición (Tu código existente) ---
-            OutlinedTextField(value = userProfile.username, onValueChange = viewModel::onUsernameChange, label = { Text("Nombre de Usuario") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = userProfile.username, onValueChange = profileViewModel::onUsernameChange, label = { Text("Nombre de Usuario") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(value = userProfile.address, onValueChange = viewModel::onAddressChange, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = userProfile.address, onValueChange = profileViewModel::onAddressChange, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(value = userProfile.phoneNumber, onValueChange = viewModel::onPhoneNumberChange, label = { Text("Número de Celular") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+            OutlinedTextField(value = userProfile.phoneNumber, onValueChange = profileViewModel::onPhoneNumberChange, label = { Text("Número de Celular") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Botón de Guardar (Tu código existente) ---
-            Button(onClick = viewModel::saveProfile, enabled = !isSaving, modifier = Modifier.fillMaxWidth()) {
+            // --- Interruptor para Modo Oscuro ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Modo Oscuro", style = MaterialTheme.typography.bodyLarge)
+                Switch(
+                    checked = useDarkMode,
+                    onCheckedChange = { mainViewModel.setDarkMode(it) }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(onClick = profileViewModel::saveProfile, enabled = !isSaving, modifier = Modifier.fillMaxWidth()) {
                 if (isSaving) {
                     CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
@@ -130,7 +139,6 @@ fun ProfileScreen(
                 }
             }
 
-            // Mostrar mensaje de éxito (Tu código existente)
             if (saveSuccess) {
                 Text(
                     "¡Perfil actualizado con éxito!",
@@ -139,13 +147,12 @@ fun ProfileScreen(
                 )
                 LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(3000)
-                    viewModel.saveSuccess.value = false
+                    profileViewModel.saveSuccess.value = false
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón de Cerrar Sesión
             OutlinedButton(
                 onClick = onLogout,
                 modifier = Modifier.fillMaxWidth(),

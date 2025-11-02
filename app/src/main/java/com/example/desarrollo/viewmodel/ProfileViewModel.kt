@@ -1,9 +1,9 @@
-
 package com.example.desarrollo.viewmodel
 
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.desarrollo.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {
 
-    // Estado para la pantalla de perfil
     private val _userProfile = MutableStateFlow(User(
         id = "1",
         username = "Martín Ejemplo",
@@ -24,12 +23,8 @@ class ProfileViewModel : ViewModel() {
     ))
     val userProfile: StateFlow<User> = _userProfile.asStateFlow()
 
-    // Estados para la UI (feedback al usuario)
     val isSaving = mutableStateOf(false)
     val saveSuccess = mutableStateOf(false)
-
-
-    // --- Funciones para actualizar los campos ---
 
     fun onUsernameChange(newUsername: String) {
         _userProfile.update { it.copy(username = newUsername) }
@@ -43,28 +38,31 @@ class ProfileViewModel : ViewModel() {
         _userProfile.update { it.copy(phoneNumber = newPhoneNumber) }
     }
 
-    // Función que se llama cuando se selecciona o captura una foto
     fun onProfilePictureUriChange(uri: Uri?) {
         uri?.let {
             _userProfile.update { it.copy(profilePictureUri = uri.toString()) }
         }
     }
 
-    // --- Lógica de Guardado ---
-
     fun saveProfile() {
         viewModelScope.launch {
             isSaving.value = true
             saveSuccess.value = false
-
-            // Simulación de la llamada a la base de datos o API
             kotlinx.coroutines.delay(1500)
-
-            // Aquí iría el código real para persistir _userProfile.value
             println("Perfil guardado: ${_userProfile.value}")
-
             isSaving.value = false
             saveSuccess.value = true
         }
+    }
+}
+
+// Factory simple para crear el ProfileViewModel
+class ProfileViewModelFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ProfileViewModel() as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

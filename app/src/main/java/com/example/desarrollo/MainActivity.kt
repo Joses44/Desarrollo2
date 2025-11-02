@@ -32,12 +32,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DesarrolloTheme {
+            // El MainViewModel se crea aquí para que esté disponible para todo el árbol de Compose.
+            val mainViewModel: MainViewModel = viewModel()
+            val useDarkMode by mainViewModel.isDarkMode.collectAsState()
+
+            DesarrolloTheme(darkTheme = useDarkMode) { // <-- TEMA DINÁMICO
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(catalogViewModel)
+                    AppNavigation(mainViewModel, catalogViewModel)
                 }
             }
         }
@@ -51,9 +55,8 @@ object AppFlow {
 }
 
 @Composable
-fun AppNavigation(catalogViewModel: CatalogViewModel) {
+fun AppNavigation(mainViewModel: MainViewModel, catalogViewModel: CatalogViewModel) {
     val navController = rememberNavController()
-    val mainViewModel: MainViewModel = viewModel()
     val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
 
     val startDestination = AppFlow.AUTH_FLOW
@@ -80,6 +83,7 @@ fun AppNavigation(catalogViewModel: CatalogViewModel) {
 
         composable(AppFlow.MAIN_FLOW) {
             MainFlow(
+                mainViewModel = mainViewModel, // Pasamos el MainViewModel
                 catalogViewModel = catalogViewModel,
                 onLogout = {
                     mainViewModel.setLoggedOut()

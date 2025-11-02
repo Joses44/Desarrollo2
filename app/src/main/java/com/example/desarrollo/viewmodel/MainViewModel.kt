@@ -13,11 +13,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val authManager = AuthManager(application)
 
-    /**
-     * Estado que la MainActivity observará para decidir qué flujo mostrar (Auth o Main).
-     * true = Sesión iniciada (mostrar MainFlow)
-     * false = Sesión cerrada (mostrar AuthFlow)
-     */
     val isLoggedIn: StateFlow<Boolean> = authManager.isLoggedIn
         .stateIn(
             scope = viewModelScope,
@@ -25,17 +20,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = false
         )
 
-    // Función de Login que se llama al tener éxito la autenticación
+    // --- Lógica de Modo Oscuro ---
+    val isDarkMode: StateFlow<Boolean> = authManager.isDarkMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     fun setLoggedIn() {
         viewModelScope.launch {
             authManager.login()
         }
     }
 
-    // Función de Logout que se llama desde ProfileScreen
     fun setLoggedOut() {
         viewModelScope.launch {
             authManager.logout()
+        }
+    }
+
+    fun setDarkMode(isDark: Boolean) {
+        viewModelScope.launch {
+            authManager.setDarkMode(isDark)
         }
     }
 }
