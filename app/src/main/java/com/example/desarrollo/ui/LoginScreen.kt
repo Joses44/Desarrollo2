@@ -29,8 +29,7 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
 
-    val name by authViewModel.loginName.observeAsState("")
-    val lastName by authViewModel.loginLastName.observeAsState("")
+
     val email by authViewModel.loginEmail.observeAsState("")
     val password by authViewModel.loginPassword.observeAsState("")
 
@@ -65,24 +64,10 @@ fun LoginScreen(
     ) {
         Text("Iniciar Sesión", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 32.dp))
 
-        OutlinedTextField(
-            value = name,
-            onValueChange = { authViewModel.onLoginNameChanged(it) },
-            label = { Text("Nombre") },
-            isError = nameError != null,
-            supportingText = { if (nameError != null) Text(nameError!!, color = MaterialTheme.colorScheme.error) },
-            modifier = Modifier.fillMaxWidth()
-        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = lastName,
-            onValueChange = { authViewModel.onLoginLastNameChanged(it) },
-            label = { Text("Apellido") },
-            isError = lastNameError != null,
-            supportingText = { if (lastNameError != null) Text(lastNameError!!, color = MaterialTheme.colorScheme.error) },
-            modifier = Modifier.fillMaxWidth()
-        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(

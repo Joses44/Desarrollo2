@@ -12,11 +12,7 @@ import kotlinx.coroutines.launch
     class AuthViewModel : ViewModel() {
 
 
-        private val _loginName = MutableLiveData("")
-        val loginName: LiveData<String> = _loginName
 
-        private val _loginLastName = MutableLiveData("")
-        val loginLastName: LiveData<String> = _loginLastName
 
         private val _loginEmail = MutableLiveData("")
         val loginEmail: LiveData<String> = _loginEmail
@@ -85,15 +81,9 @@ import kotlinx.coroutines.launch
         }
 
 
-        fun onLoginNameChanged(name: String) {
-            _loginName.value = name
-            _loginNameError.value = null
-        }
 
-        fun onLoginLastNameChanged(lastName: String) {
-            _loginLastName.value = lastName
-            _loginLastNameError.value = null
-        }
+
+
 
         fun onLoginEmailChanged(email: String) {
             _loginEmail.value = email
@@ -144,26 +134,23 @@ import kotlinx.coroutines.launch
         fun login() {
             _loginResult.value = null
 
-            val name = _loginName.value ?: ""
-            val lastName = _loginLastName.value ?: ""
+
             val email = _loginEmail.value ?: ""
             val password = _loginPassword.value ?: ""
 
-            val nameError = validateName(name)
-            val lastNameError = validateName(lastName)
+
             val emailError = validateEmail(email)
 
-            _loginNameError.value = nameError
-            _loginLastNameError.value = lastNameError
+
             _loginEmailError.value = emailError
 
-            val hasErrors = nameError != null || lastNameError != null || emailError != null
+            val hasErrors =  emailError != null
 
             if (!hasErrors) {
                 viewModelScope.launch {
                     delay(500)
                     val userFound = registeredUsers.any {
-                        it.nombre == name && it.apellido == lastName && it.correo == email && it.contrasena == password
+                         it.correo == email && it.contrasena == password
                     }
                     if (userFound) {
                         _loginResult.value = true
