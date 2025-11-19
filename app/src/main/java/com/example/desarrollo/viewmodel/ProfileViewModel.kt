@@ -16,10 +16,10 @@ class ProfileViewModel : ViewModel() {
 
     private val _userProfile = MutableStateFlow(User(
         id = "1",
-        username = "Martín Ejemplo",
-        address = "Av. Siempre Viva 742",
-        phoneNumber = "+56 9 1234 5678",
-        profilePictureUri = ""
+        username = " ",
+        address = " ",
+        phoneNumber = " ",
+        profilePictureUri = " "
     ))
     val userProfile: StateFlow<User> = _userProfile.asStateFlow()
 
