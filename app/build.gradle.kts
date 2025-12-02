@@ -49,7 +49,27 @@ dependencies {
     // --- Core y Utilidades ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation("io.coil-kt:coil-compose:2.6.0") 
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // 2. Convertidor JSON (para mapear JSON a objetos Kotlin)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // 3. Coroutines Adapter (para usar Retrofit con funciones suspend)
+    implementation("com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2")
+
+
+
+// OkHttp Logging Interceptor
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+
+
+    // 4. Coroutines Core (Para manejo asíncrono)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // 5. Logging Interceptor (Opcional, pero muy útil para ver peticiones en Logcat)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     // --- Jetpack Compose (BOM) ---
     implementation(platform(libs.androidx.compose.bom))

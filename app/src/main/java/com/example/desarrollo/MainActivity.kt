@@ -75,8 +75,13 @@ fun AppNavigation(mainViewModel: MainViewModel, catalogViewModel: CatalogViewMod
     ) {
         composable(AppFlow.AUTH_FLOW) {
             AuthNavigation(
-                onAuthSuccess = {
-                    mainViewModel.setLoggedIn()
+                // 🚀 CORRECCIÓN: Captura el token (String) que viene de AuthNavigation
+                onAuthSuccess = { token ->
+
+                    // Pasa el token al ViewModel para que lo guarde y actualice el estado
+                    mainViewModel.setLoggedIn(
+                        token
+                    )
                 }
             )
         }

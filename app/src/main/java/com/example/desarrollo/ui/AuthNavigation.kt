@@ -13,7 +13,8 @@ object AuthDestinations {
 }
 
 @Composable
-fun AuthNavigation(onAuthSuccess: () -> Unit) {
+// 💡 CAMBIO CRUCIAL: onAuthSuccess ahora espera el 'token: String'
+fun AuthNavigation(onAuthSuccess: (token: String) -> Unit) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
 
@@ -21,6 +22,7 @@ fun AuthNavigation(onAuthSuccess: () -> Unit) {
         composable(AuthDestinations.LOGIN_ROUTE) {
             LoginScreen(
                 authViewModel = authViewModel,
+                // onLoginSuccess ahora debe pasar el token que recibe a onAuthSuccess
                 onLoginSuccess = onAuthSuccess,
                 onNavigateToRegister = { navController.navigate(AuthDestinations.REGISTER_ROUTE) }
             )
@@ -28,8 +30,9 @@ fun AuthNavigation(onAuthSuccess: () -> Unit) {
         composable(AuthDestinations.REGISTER_ROUTE) {
             SignUpScreen(
                 authViewModel = authViewModel,
-                onRegistrationSuccess = { navController.popBackStack() }, // Volver al Login
-                onNavigateToLogin = { navController.popBackStack() } // Volver al Login
+                // Generalmente, el registro exitoso simplemente vuelve al login para iniciar sesión
+                onRegistrationSuccess = { navController.popBackStack() },
+                onNavigateToLogin = { navController.popBackStack() }
             )
         }
     }
