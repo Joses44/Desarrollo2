@@ -23,6 +23,8 @@ interface ProductDao {
     suspend fun insertProducts(products: List<Product>)
 
 
+
+
     @Transaction
     @Query("SELECT * FROM categories")
     fun getCategoriesWithProducts(): Flow<List<CategoryWithProducts>>

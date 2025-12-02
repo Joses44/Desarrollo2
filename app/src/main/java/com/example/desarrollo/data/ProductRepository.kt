@@ -25,6 +25,12 @@ class ProductRepository(
     // 2. Lógica de Lectura Local (Room)
     val categoriesWithProducts: Flow<List<CategoryWithProducts>> = productDao.getCategoriesWithProducts()
 
+
+    suspend fun deleteLocalProducts() {
+        withContext(Dispatchers.IO) {
+            productDao.clearAllProducts()
+        }
+    }
     /**
      * Función principal para orquestar la llamada a la red y guardar en Room.
      * Esta función es llamada desde el ViewModel.
