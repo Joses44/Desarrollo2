@@ -11,6 +11,8 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    // 💡 NOTA: Idealmente, el AuthManager debería ser inyectado desde MyApplication,
+    // pero funciona así si no quieres cambiar la estructura de la Factory.
     private val authManager = AuthManager(application)
 
     val isLoggedIn: StateFlow<Boolean> = authManager.isLoggedIn
@@ -28,15 +30,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = false
         )
 
-    fun setLoggedIn() {
+    // =========================================================
+    // 🆕 FUNCIONES DE SESIÓN ACTUALIZADAS (USA saveToken/clearToken)
+    // =========================================================
+
+    /**
+     * Reemplaza a login(). Usamos una cadena placeholder por ahora.
+     * En una app real, llamarías a esta función después de un POST exitoso a /api/auth/login.
+     */
+    fun setLoggedIn(token: String) { // Ahora debe aceptar el token
         viewModelScope.launch {
-            authManager.login()
+            authManager.saveToken(token) // Usa la función correcta
         }
     }
 
+    /**
+     * Reemplaza a logout(). Limpia el token.
+     */
     fun setLoggedOut() {
         viewModelScope.launch {
-            authManager.logout()
+            authManager.clearToken() // Usa la función correcta
         }
     }
 

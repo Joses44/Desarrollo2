@@ -5,9 +5,13 @@ import com.example.desarrollo.model.CartItemDetails
 import com.example.desarrollo.model.Product
 import kotlinx.coroutines.flow.Flow
 
-class CartRepository(private val cartDao: CartDao) {
+import com.example.desarrollo.network.ApiService
+
+class CartRepository(private val cartDao: CartDao, apiService1: ApiService) {
+
 
     val cartItems: Flow<List<CartItemDetails>> = cartDao.getCartItems()
+
 
     suspend fun addItem(product: Product) {
         val existingItem = cartDao.getCartItem(product.id)

@@ -5,61 +5,65 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// Extensión para obtener el DataStore a nivel de aplicación (solo una vez)
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs") // Renombrado a user_prefs para más generalidad
+// Extensión para obtener el DataStore a nivel de aplicación
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
 class AuthManager(private val context: Context) {
 
     companion object {
-        // Clave para el estado de inicio de sesión
-        private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
-        // Clave para el modo oscuro
+        // 🔑 CLAVE PRINCIPAL: Almacenar la cadena JWT
+        private val AUTH_TOKEN = stringPreferencesKey("auth_token")
+
+        // Clave para el modo oscuro (mantenida)
         private val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
     }
 
+    // =========================================================
+    // GESTIÓN DEL TOKEN (REEMPLAZA IS_LOGGED_IN)
+    // =========================================================
+
     /**
-     * Devuelve un Flow que emite el estado actual de la sesión.
+     * Guarda la cadena JWT recibida del backend.
      */
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data
+    suspend fun saveToken(token: String) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTH_TOKEN] = token
+        }
+    }
+
+    /**
+     * Devuelve la cadena JWT guardada. El AuthInterceptor usará este método.
+     * Retorna null si el usuario no está logueado.
+     */
+    fun getToken(): Flow<String?> = context.dataStore.data
         .map { preferences ->
-            preferences[IS_LOGGED_IN] ?: false
+            preferences[AUTH_TOKEN] // Retorna la cadena o null
         }
 
     /**
-     * Guarda el estado como True (Sesión iniciada).
+     * Limpia el token al cerrar sesión.
      */
-    suspend fun login() {
+    suspend fun clearToken() {
         context.dataStore.edit { preferences ->
-            preferences[IS_LOGGED_IN] = true
+            preferences.remove(AUTH_TOKEN)
         }
     }
 
-    /**
-     * Guarda el estado como False (Sesión cerrada).
-     */
-    suspend fun logout() {
-        context.dataStore.edit { preferences ->
-            preferences[IS_LOGGED_IN] = false
-        }
-    }
+    // Un simple Flow para determinar si está logueado (si el token existe)
+    val isLoggedIn: Flow<Boolean> = getToken().map { it != null }
 
-    // --- Lógica del Modo Oscuro ---
 
-    /**
-     * Devuelve un Flow que emite si el modo oscuro está activado.
-     */
+    // --- Lógica del Modo Oscuro (Mantenida) ---
     val isDarkMode: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[IS_DARK_MODE] ?: false // Por defecto, el modo oscuro está desactivado
+            preferences[IS_DARK_MODE] ?: false
         }
 
-    /**
-     * Guarda la preferencia del modo oscuro del usuario.
-     */
     suspend fun setDarkMode(isDark: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_DARK_MODE] = isDark
