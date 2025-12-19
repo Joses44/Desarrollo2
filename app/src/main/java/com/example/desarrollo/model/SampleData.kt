@@ -4,112 +4,113 @@ import com.example.desarrollo.R
 
 object SampleData {
 
+    // 🎯 Categorías sincronizadas (1 al 4)
     val categories = listOf(
-        Category(name = "Frutas frescas"),
-        Category(name = "Verduras orgánicas"),
-        Category(name = "Productos orgánicos"),
-        Category(name = "Productos lácteos")
+        Category(id = 1L, name = "FRUTAS", iconRes = 1),
+        Category(id = 2L, name = "VEGETALES", iconRes = 2),
+        Category(id = 3L, name = "DESPENSA", iconRes = 3),
+        Category(id = 4L, name = "LACTEOS", iconRes = 4)
     )
 
     val products = listOf(
         Product(
-            id = 1,
-            name = "Manzanas Fuji",
+            id = 1L, // 🎯 Sincronizado con el ID 1 del JSON
+            name = "Manzanas fuji",
             price = 1200,
             unit = "kg",
             stock = 150,
-            imageRes = R.drawable.manzanafuji,
-            description = "Manzanas Fuji crujientes y dulces, cultivadas en el Valle del Maule. Perfectas para meriendas saludables o como ingrediente en postres. Estas manzanas son conocidas por su textura firme y su sabor equilibrado entre dulce y ácido.",
-            rating = 4.3,
-            categoryId = "Frutas frescas"
+            imageRes = 101,
+            description = "Manzanas Fuji crujientes y dulces, cultivadas en el Valle del Maule.",
+            rating = 4.8,
+            categoryId = 1L
         ),
         Product(
-            id = 2,
-            name = "Naranjas Valencia",
+            id = 2L, // 🎯 Sincronizado con el ID 2 del JSON
+            name = "Naranjas valencia",
             price = 1000,
             unit = "kg",
             stock = 200,
-            imageRes = R.drawable.naranjas,
-            description = "Jugosas y ricas en vitamina C, estas naranjas Valencia son ideales para zumos frescos y refrescantes. Cultivadas en condiciones climáticas óptimas que aseguran su dulzura y jugosidad.",
-            rating = 4.7,
-            categoryId = "Frutas frescas"
+            imageRes = 102,
+            description = "Jugosas y ricas en vitamina C, ideales para zumos frescos.",
+            rating = 4.5,
+            categoryId = 1L
         ),
         Product(
-            id = 3,
-            name = "Plátanos Cavendish",
+            id = 3L,
+            name = "Plátanos cavendish",
             price = 800,
             unit = "kg",
-            stock = 250 ,
-            imageRes = R.drawable.platanos,
-            description = "Plátanos maduros y dulces, perfectos para el desayuno o como snack energético. Estos plátanos son ricos en potasio y vitaminas, ideales para mantener una dieta equilibrada.",
-            rating = 4.8,
-            categoryId = "Frutas frescas"
+            stock = 250,
+            imageRes = 103,
+            description = "Plátanos maduros y dulces, perfectos para el desayuno.",
+            rating = 4.2,
+            categoryId = 1L
         ),
         Product(
-            id = 4,
+            id = 4L,
             name = "Zanahorias Orgánicas",
             price = 900,
             unit = "kg",
-            stock = 100 ,
-            imageRes = R.drawable.zanahoria,
-            description = "Zanahorias crujientes cultivadas sin pesticidas en la Región de O'Higgins. Excelente fuente de vitamina A y fibra, ideales para ensaladas, jugos o como snack saludable.",
-            rating = 4.5,
-            categoryId = "Verduras orgánicas"
+            stock = 100,
+            imageRes = 104,
+            description = "Zanahorias crujientes cultivadas sin pesticidas.",
+            rating = 4.7,
+            categoryId = 2L
         ),
         Product(
-            id = 5,
+            id = 5L,
             name = "Espinacas frescas",
             price = 700,
             unit = "bolsa",
-            stock = 80 ,
-            imageRes = R.drawable.espinaca,
-            description = "Espinacas frescas y nutritivas, perfectas para ensaladas y batidos verdes. Estas espinacas son cultivadas bajo prácticas orgánicas que garantizan su calidad y valor nutricional.",
-            rating = 4.1,
-            categoryId = "Verduras orgánicas"
+            stock = 80,
+            imageRes = 105,
+            description = "Espinacas frescas y nutritivas, perfectas para ensaladas.",
+            rating = 4.6,
+            categoryId = 2L
         ),
         Product(
-            id = 6,
+            id = 6L,
             name = "Pimientos tricolor",
             price = 1500,
             unit = "kg",
-            stock = 120 ,
-            imageRes = R.drawable.pimiento,
-            description = "Pimientos rojos, amarillos y verdes, ideales para salteados y platos coloridos. Ricos en antioxidantes y vitaminas, estos pimientos añaden un toque vibrante y saludable a cualquier receta.",
+            stock = 120,
+            imageRes = 106,
+            description = "Pimientos rojos, amarillos y verdes, ideales para salteados.",
             rating = 4.4,
-            categoryId = "Verduras orgánicas"
+            categoryId = 2L
         ),
         Product(
-            id = 7,
+            id = 7L,
             name = "Miel orgánica",
             price = 5000,
             unit = "frasco",
-            stock = 50 ,
-            imageRes = R.drawable.miel,
-            description = "Miel pura y orgánica, rica en antioxidantes, perfecta para endulzar naturalmente.",
-            rating = 4.8,
-            categoryId = "Productos orgánicos"
+            stock = 50,
+            imageRes = 107,
+            description = "Miel pura y orgánica, rica en antioxidantes.",
+            rating = 4.9,
+            categoryId = 3L
         ),
         Product(
-            id = 8,
+            id = 8L,
             name = "Quinoa orgánica",
             price = 800,
-            unit = "kg",
+            unit = "bolsa",
             stock = 130,
-            imageRes = R.drawable.quinoa,
-            description = "Quinoa orgánica cultivada en los Andes, conocida como un superalimento por su alto contenido en proteínas, fibra y minerales. Es libre de gluten y versátil en la cocina, perfecta para ensaladas, guisos y platos saludables.",
-            rating = 4.6,
-            categoryId = "Productos orgánicos"
+            imageRes = 108,
+            description = "Quinoa orgánica cultivada en los Andes, un superalimento.",
+            rating = 4.3,
+            categoryId = 3L
         ),
         Product(
-            id = 9,
+            id = 9L,
             name = "Leche entera",
             price = 800,
             unit = "litro",
-            stock = 120 ,
-            imageRes = R.drawable.lecheentera,
-            description = "Leche entera fresca y nutritiva, proveniente de ganado local. Rica en calcio, proteínas y vitaminas esenciales, ideal para fortalecer los huesos y mantener una alimentación equilibrada. Perfecta para desayunos, batidos y recetas caseras.",
-            rating = 4.2,
-            categoryId = "Productos lácteos"
+            stock = 120,
+            imageRes = 109,
+            description = "Leche entera fresca y nutritiva, proveniente de ganado local.",
+            rating = 4.5,
+            categoryId = 4L
         )
     )
 }

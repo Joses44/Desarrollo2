@@ -4,14 +4,11 @@ import com.example.desarrollo.model.CartItem
 import com.example.desarrollo.model.CartItemDetails
 import com.example.desarrollo.model.Product
 import kotlinx.coroutines.flow.Flow
-
 import com.example.desarrollo.network.ApiService
 
-class CartRepository(private val cartDao: CartDao, apiService1: ApiService) {
-
+class CartRepository(private val cartDao: CartDao) { // Eliminado parámetro no usado
 
     val cartItems: Flow<List<CartItemDetails>> = cartDao.getCartItems()
-
 
     suspend fun addItem(product: Product) {
         val existingItem = cartDao.getCartItem(product.id)
@@ -23,7 +20,8 @@ class CartRepository(private val cartDao: CartDao, apiService1: ApiService) {
         }
     }
 
-    suspend fun removeItem(productId: Int) {
+    // 🎯 CORRECCIÓN: Cambiado de Int a Long
+    suspend fun removeItem(productId: Long) {
         cartDao.deleteItem(productId)
     }
 
@@ -31,7 +29,8 @@ class CartRepository(private val cartDao: CartDao, apiService1: ApiService) {
         cartDao.clearCart()
     }
 
-    suspend fun incrementItem(productId: Int) {
+    // 🎯 CORRECCIÓN: Cambiado de Int a Long
+    suspend fun incrementItem(productId: Long) {
         val existingItem = cartDao.getCartItem(productId)
         if (existingItem != null) {
             val updatedItem = existingItem.copy(quantity = existingItem.quantity + 1)
@@ -39,7 +38,8 @@ class CartRepository(private val cartDao: CartDao, apiService1: ApiService) {
         }
     }
 
-    suspend fun decrementItem(productId: Int) {
+    // 🎯 CORRECCIÓN: Cambiado de Int a Long
+    suspend fun decrementItem(productId: Long) {
         val existingItem = cartDao.getCartItem(productId)
         if (existingItem != null) {
             if (existingItem.quantity > 1) {

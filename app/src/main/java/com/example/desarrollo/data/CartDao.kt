@@ -28,11 +28,11 @@ interface CartDao {
     suspend fun insertItem(item: CartItem)
 
     @Query("DELETE FROM cart_items WHERE productId = :productId")
-    suspend fun deleteItem(productId: Int)
+    suspend fun deleteItem(productId: Long) // 🎯 Cambiado a Long
 
     @Query("DELETE FROM cart_items")
     suspend fun clearCart()
 
     @Query("SELECT * FROM cart_items WHERE productId = :productId")
-    suspend fun getCartItem(productId: Int): CartItem?
+    suspend fun getCartItem(productId: Long): CartItem? // 🎯 Cambiado a Long
 }
