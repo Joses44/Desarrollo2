@@ -149,7 +149,8 @@ fun ProductList(
                 items(categoryWithProducts.products) { product ->
                     ProductCard(
                         product = product,
-                        onAddToCart = { cartViewModel.agregarAlCarrito(product) }
+                        // ✅ CORRECCIÓN: Ahora pasamos SÓLO el ID del producto
+                        onAddToCart = { cartViewModel.agregarAlCarrito(product.id) }
                     )
                 }
             }

@@ -1,5 +1,6 @@
 package com.example.desarrollo.ui
 
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,18 +24,60 @@ import com.example.desarrollo.viewmodel.CartViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
+// --- FUNCIONES DE SOPORTE ---
+
+// Formatea el precio utilizando Double, acorde al backend
+private fun formatPrice(price: Double): String {
+    // Usamos el formato de moneda local.
+    // Si necesitas un formato específico (ej. USD sin símbolo), ajusta el Locale/Currency.
+    return NumberFormat.getCurrencyInstance(Locale.getDefault()).format(price)
+}
+
+private fun getFormattedUnit(quantity: Int, unit: String): String {
+    return if (quantity != 1 && unit.equals("kg", ignoreCase = true).not()) {
+        "${unit}s"
+    } else {
+        unit
+    }
+}
+
+// --- PANTALLA PRINCIPAL ---
+
 @Composable
 fun CartScreen(
     modifier: Modifier = Modifier,
     cartViewModel: CartViewModel
 ) {
+    // Observamos el estado del ViewModel (que incluye items, total, loading, error)
     val uiState by cartViewModel.uiState.collectAsState()
+
+    // Estados para los diálogos
     var showClearCartDialog by rememberSaveable { mutableStateOf(false) }
     var showPurchaseDialog by rememberSaveable { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<CartItemDetails?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (uiState.items.isEmpty()) {
+
+        // 1. Manejo de Carga y Error
+        if (uiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else if (uiState.errorMessage != null) {
+            // Muestra error y un botón de reintento
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("Error al cargar el carrito: ${uiState.errorMessage}", color = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = { cartViewModel.fetchCart() }) {
+                    Text("Reintentar")
+                }
+            }
+        }
+
+        // 2. Contenido Principal (Carrito Lleno o Vacío)
+        else if (uiState.items.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -55,7 +98,7 @@ fun CartScreen(
                 )
 
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(uiState.items) { item ->
+                    items(uiState.items, key = { it.productId }) { item -> // Usar el ID del CartItem como clave
                         CartItem(
                             item = item,
                             onIncrement = { cartViewModel.incrementarUnidad(item.productId) },
@@ -66,13 +109,15 @@ fun CartScreen(
                 }
 
                 TotalFooter(
-                    total = uiState.total,
+                    total = uiState.total, // Total ahora es Double
                     onClearCart = { showClearCartDialog = true },
                     onPurchase = { showPurchaseDialog = true }
                 )
             }
         }
     }
+
+    // --- DIÁLOGOS ---
 
     if (showClearCartDialog) {
         AlertDialog(
@@ -101,7 +146,7 @@ fun CartScreen(
     if (showPurchaseDialog) {
         PurchaseSummaryDialog(
             items = uiState.items,
-            total = uiState.total,
+            total = uiState.total, // Total ahora es Double
             onDismiss = { showPurchaseDialog = false }
         )
     }
@@ -110,11 +155,122 @@ fun CartScreen(
         ConfirmarEliminacionDialog(
             item = it,
             onConfirm = {
+                // CORRECCIÓN CLAVE: Usamos el ID de la línea de carrito (CartItemDetails.id)
                 cartViewModel.removerProducto(it.productId)
                 itemToDelete = null
             },
             onDismiss = { itemToDelete = null }
         )
+    }
+}
+
+// --- COMPONENTES REUTILIZABLES ---
+
+@Composable
+fun CartItem(
+    item: CartItemDetails,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Nota: Debes asegurar que tu CartItemDetails tenga imageRes o imageUrl
+            Image(
+                painter = painterResource(id = item.imageRes),
+                contentDescription = item.name,
+                modifier = Modifier.size(64.dp).clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Asegúrate de que item.price sea Double para esta multiplicación,
+                // o haz un cast antes de la multiplicación.
+                val itemTotalPrice = item.price * item.quantity
+                Text(
+                    text = formatPrice(itemTotalPrice.toDouble()), // Formateamos el subtotal
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                OutlinedButton(onClick = onDecrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
+                    Icon(Icons.Default.Remove, contentDescription = "Quitar unidad")
+                }
+                Text(
+                    text = "${item.quantity}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                OutlinedButton(onClick = onIncrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir unidad")
+                }
+                IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar producto")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TotalFooter(
+    total: Double, // Ahora Double
+    onClearCart: () -> Unit,
+    onPurchase: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 8.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Total:", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = formatPrice(total), // Usamos la función actualizada
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onClearCart,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Vaciar Carrito")
+                }
+                Button(
+                    onClick = onPurchase,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Comprar")
+                }
+            }
+        }
     }
 }
 
@@ -147,11 +303,10 @@ fun ConfirmarEliminacionDialog(
     )
 }
 
-
 @Composable
 fun PurchaseSummaryDialog(
     items: List<CartItemDetails>,
-    total: Int,
+    total: Double, // Ahora Double
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -173,7 +328,7 @@ fun PurchaseSummaryDialog(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Total: $${formatPrice(total)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                Text("Total: ${formatPrice(total)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
             }
         },
         confirmButton = {
@@ -189,118 +344,4 @@ fun PurchaseSummaryDialog(
     )
 }
 
-private fun getFormattedUnit(quantity: Int, unit: String): String {
-    return if (quantity != 1 && unit.equals("kg", ignoreCase = true).not()) {
-        "${unit}s"
-    } else {
-        unit
-    }
-}
 
-@Composable
-fun CartItem(
-    item: CartItemDetails,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = item.imageRes),
-                contentDescription = item.name,
-                modifier = Modifier.size(64.dp).clip(CircleShape)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "$${formatPrice(item.price * item.quantity)}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                OutlinedButton(onClick = onDecrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
-                    Icon(Icons.Default.Remove, contentDescription = "Quitar unidad")
-                }
-                Text(
-                    text = "${item.quantity}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                OutlinedButton(onClick = onIncrement, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) {
-                    Icon(Icons.Default.Add, contentDescription = "Añadir unidad")
-                }
-                IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar producto")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TotalFooter(
-    total: Int,
-    onClearCart: () -> Unit,
-    onPurchase: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Total:", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    text = "$${formatPrice(total)}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onClearCart,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Vaciar Carrito")
-                }
-                Button(
-                    onClick = onPurchase,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Comprar")
-                }
-            }
-        }
-    }
-}
-
-private fun formatPrice(price: Int): String {
-    return NumberFormat.getNumberInstance(Locale.GERMANY).format(price)
-}
