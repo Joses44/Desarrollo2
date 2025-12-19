@@ -13,15 +13,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+
 @Database(
-    entities = [Product::class, Category::class, CartItem::class],
-    version = 4, // 🎯 Subimos a 4 por el cambio de Int a Long en los IDs
+    // ❌ ELIMINADO: CartItem::class
+    entities = [Product::class, Category::class],
+    version = 5, // ✅ VERSION SUBIDA a 5 debido al cambio de esquema (eliminación de CartItem)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
-    abstract fun cartDao(): CartDao
+    // ❌ ELIMINADO: abstract fun cartDao(): CartDao
 
     companion object {
         @Volatile
@@ -34,7 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .fallbackToDestructiveMigration() // Borra la BD vieja para aplicar los Long
+                    .fallbackToDestructiveMigration() // Borra la BD vieja para aplicar el nuevo esquema
                     .addCallback(AppDatabaseCallback())
                     .build()
                 INSTANCE = instance
@@ -49,7 +51,8 @@ abstract class AppDatabase : RoomDatabase() {
             INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
                     val productDao = database.productDao()
-                    // Asegúrate de que SampleData.products también use Longs en sus IDs
+
+                    // Asumiendo que SampleData.kt existe y es necesario en onCreate
                     productDao.insertCategories(SampleData.categories)
                     productDao.insertProducts(SampleData.products)
                 }

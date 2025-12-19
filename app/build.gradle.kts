@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp) //  <-- CAMBIO: Usamos el plugin KSP en lugar de kapt
+    alias(libs.plugins.ksp) //
+
 }
 
 android {

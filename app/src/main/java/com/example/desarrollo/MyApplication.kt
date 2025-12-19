@@ -6,7 +6,7 @@ import com.example.desarrollo.data.CartRepository
 import com.example.desarrollo.data.ProductRepository
 import com.example.desarrollo.data.AuthManager
 import com.example.desarrollo.network.RetrofitClient
-
+import com.example.desarrollo.viewmodel.CartViewModelFactory
 class MyApplication : Application() {
 
     // 1. Base de Datos (Persistencia Local)
@@ -28,10 +28,17 @@ class MyApplication : Application() {
         )
     }
 
-    // 5. Repositorio de Carrito
+    // 5. Repositorio de Carrito (¡CORREGIDO!)
     val cartRepository by lazy {
         CartRepository(
-            database.cartDao() // ✅ Corregido: Se eliminó apiService para coincidir con el nuevo constructor
+
+            apiService = apiService
         )
+    }
+
+    // 6. CartViewModelFactory (Necesario para la inyección manual del ViewModel)
+    val cartViewModelFactory by lazy {
+        // Necesitas que el Factory reciba el Repositorio
+        CartViewModelFactory(cartRepository)
     }
 }

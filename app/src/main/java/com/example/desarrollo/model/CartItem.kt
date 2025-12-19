@@ -1,10 +1,16 @@
 package com.example.desarrollo.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "cart_items")
+
 data class CartItem(
-    @PrimaryKey val productId: Long, // 🎯 Cambiado a Long
-    var quantity: Int
+    val id: Long,
+    val productId: Long,
+    val quantity: Int
+    // El servidor puede enviar más detalles aquí
+)
+
+// Archivo: CartRequest.kt (Payload para enviar al servidor)
+data class CartRequest(
+    val productId: Long,
+    val quantity: Int
 )
