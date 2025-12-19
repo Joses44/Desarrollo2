@@ -13,7 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [Product::class, Category::class, CartItem::class], version = 2, exportSchema = false) // <-- VERSIÓN ACTUALIZADA
+@Database(
+    entities = [Product::class, Category::class, CartItem::class],
+    version = 4, // 🎯 Subimos a 4 por el cambio de Int a Long en los IDs
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
@@ -30,9 +34,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                .fallbackToDestructiveMigration() // Añadimos esto para que la app no crashee al cambiar de versión
-                .addCallback(AppDatabaseCallback())
-                .build()
+                    .fallbackToDestructiveMigration() // Borra la BD vieja para aplicar los Long
+                    .addCallback(AppDatabaseCallback())
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -45,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
             INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
                     val productDao = database.productDao()
+                    // Asegúrate de que SampleData.products también use Longs en sus IDs
                     productDao.insertCategories(SampleData.categories)
                     productDao.insertProducts(SampleData.products)
                 }

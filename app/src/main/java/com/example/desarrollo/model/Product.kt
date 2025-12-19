@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "products")
 data class Product(
-    @PrimaryKey val id: Int,
+    @PrimaryKey
+    val id: Long,
     val name: String,
     val price: Int,
     val unit: String,
@@ -13,6 +14,7 @@ data class Product(
     val imageRes: Int,
     val description: String,
     val rating: Double,
-    val categoryId: String, // Llave foránea para la categoría
+    val categoryId: Long, // 🎯 Relacionado con el id de Category
+    val imageUrl: String? = null,
     var cantidad: Int = 0
 )

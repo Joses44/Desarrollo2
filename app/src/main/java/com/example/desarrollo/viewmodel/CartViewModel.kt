@@ -36,7 +36,7 @@ class CartViewModel(private val repository: CartRepository) : ViewModel() {
         }
     }
 
-    fun removerProducto(productId: Int) {
+    fun removerProducto(productId: Long) { // ✅ Usando Long
         viewModelScope.launch {
             repository.removeItem(productId)
         }
@@ -48,13 +48,13 @@ class CartViewModel(private val repository: CartRepository) : ViewModel() {
         }
     }
 
-    fun incrementarUnidad(productId: Int) {
+    fun incrementarUnidad(productId: Long) { // ✅ Usando Long
         viewModelScope.launch {
             repository.incrementItem(productId)
         }
     }
 
-    fun decrementarUnidad(productId: Int) {
+    fun decrementarUnidad(productId: Long) { // ✅ Usando Long
         viewModelScope.launch {
             repository.decrementItem(productId)
         }

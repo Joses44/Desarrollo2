@@ -7,23 +7,29 @@ import com.example.desarrollo.data.ProductRepository
 import com.example.desarrollo.model.CategoryWithProducts
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// ----------------------------------------------------
-// 1. DEFINICIÓN DEL ESTADO DE LA UI (PARA LA RED)
-// ----------------------------------------------------
+/**
+ * 1. DEFINICIÓN DEL ESTADO DE LA UI PARA LA RED
+ * Maneja los estados de la llamada al API de Spring Boot.
+ */
 sealed interface ProductSyncState {
-    object Loading : ProductSyncState // Carga inicial de la red
-    object Success : ProductSyncState // Sincronización exitosa
-    data class Error(val message: String) : ProductSyncState // Fallo de red (Backend inactivo)
+    object Loading : ProductSyncState
+    object Success : ProductSyncState
+    data class Error(val message: String) : ProductSyncState
 }
 
+/**
+ * 2. VIEWMODEL DEL CATÁLOGO
+ * Utiliza el ProductRepository para obtener datos de Room y sincronizar con el Backend.
+ */
 class CatalogViewModel(private val repository: ProductRepository) : ViewModel() {
 
-    // 2. LIVE DATA / STATEFLOW DE LOS DATOS DE ROOM (La fuente de verdad)
-    // El ViewModel expone los datos de la BD local (Room).
+    /**
+     * Fuente de verdad: Datos provenientes de la base de datos local (Room).
+     * Se actualiza automáticamente cuando el repositorio inserta nuevos datos.
+     */
     val categoriesWithProducts: StateFlow<List<CategoryWithProducts>> = repository.categoriesWithProducts
         .stateIn(
             scope = viewModelScope,
@@ -31,39 +37,35 @@ class CatalogViewModel(private val repository: ProductRepository) : ViewModel() 
             initialValue = emptyList()
         )
 
-    // 3. ESTADO DE LA SINCRONIZACIÓN DE LA RED
-    // Exponemos el estado de la última llamada a la API.
-    private val _syncState = repository.syncState // Asumimos que el repositorio expone este estado
-    val syncState: StateFlow<ProductSyncState> = _syncState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = ProductSyncState.Loading
-    )
+    /**
+     * Estado de sincronización: Refleja si el Backend respondió correctamente.
+     */
+    val syncState: StateFlow<ProductSyncState> = repository.syncState
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = ProductSyncState.Loading
+        )
 
-    // 4. COMBINACIÓN DE ESTADOS (Opcional, pero útil si necesitas una sola UiState)
-    // Aquí se combina el estado de la red (syncState) y los datos de la BD.
-    // val uiState: StateFlow<CombinedCatalogState> = combine(categoriesWithProducts, syncState) { data, sync ->
-    //     CombinedCatalogState(data = data, sync = sync)
-    // }.stateIn( ... )
-
-    // 5. INICIAR LA SINCRONIZACIÓN
     init {
-        // Al crear el ViewModel, intenta obtener los productos del backend
-        // Si tiene éxito, Room se actualiza automáticamente (triggering categoriesWithProducts).
-        // Si falla (backend caído), _syncState se actualiza a Error.
+        // Al iniciar la App, intentamos traer productos frescos del servidor
         refreshProducts()
     }
 
+    /**
+     * Llama al repositorio para descargar los productos de la API.
+     */
     fun refreshProducts() {
         viewModelScope.launch {
-            repository.refreshProductsFromNetwork() // Llamada que ejecuta la lógica de red
+            repository.refreshProductsFromNetwork()
         }
     }
 }
 
-// ----------------------------------------------------
-// 6. FACTORY (Se mantiene igual)
-// ----------------------------------------------------
+/**
+ * 3. FACTORY PARA EL VIEWMODEL
+ * Necesario porque pasamos el ProductRepository como parámetro al constructor.
+ */
 class CatalogViewModelFactory(private val repository: ProductRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CatalogViewModel::class.java)) {

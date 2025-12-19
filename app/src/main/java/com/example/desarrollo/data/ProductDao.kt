@@ -10,11 +10,8 @@ import com.example.desarrollo.model.CategoryWithProducts
 import com.example.desarrollo.model.Product
 import kotlinx.coroutines.flow.Flow
 
-
-
 @Dao
 interface ProductDao {
-
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategories(categories: List<Category>)
@@ -22,20 +19,22 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProducts(products: List<Product>)
 
-
     @Transaction
     @Query("SELECT * FROM categories")
     fun getCategoriesWithProducts(): Flow<List<CategoryWithProducts>>
 
-
     @Query("SELECT COUNT(*) FROM products")
     suspend fun getProductCount(): Int
 
-    // =========================================================
-    // 🆕 MÉTODO DE LIMPIEZA PARA SINCRONIZACIÓN
-    // =========================================================
-
-
     @Query("DELETE FROM products")
     suspend fun clearAllProducts()
+
+    /**
+     * Sincronización atómica: Limpia y guarda los nuevos productos del Backend.
+     */
+    @Transaction
+    suspend fun deleteAndInsertProducts(products: List<Product>) {
+        clearAllProducts()
+        insertProducts(products)
+    }
 }
